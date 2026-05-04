@@ -192,16 +192,27 @@ async def analyze(media: UploadFile = File(...)):
 
 
 @app.get("/history")
-async def history(request: Request):
-    data = get_historique()
+async def history(limit: int = 50):
+    """
+    Retourne l'historique en JSON
+    - limit : nombre max de résultats (par défaut 50)
+    """
 
-    if "text/html" in request.headers.get("accept", ""):
-        return templates.TemplateResponse("history.html", {
-            "request": request,
+    try:
+        data = get_historique(limit)
+
+        return JSONResponse({
+            "success": True,
+            "total": len(data),
             "analyses": data
         })
 
-    return {"data": data}
+    except Exception as e:
+        # En cas d'erreur base de données
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur récupération historique : {str(e)}"
+        )
 
 
 @app.get("/health")
