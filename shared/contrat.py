@@ -86,12 +86,12 @@ WATERMARK_VIDEO = {
 # PORTS OFFICIELS — NE JAMAIS CHANGER
 # ================================================================
 PORTS = {
-    "gateway"         : 5000,  # main.py           — Toi
-    "score"           : 5001,  # score_service.py  — Toi
-    "watermark"       : 5002,  # watermark_*.py    — Membre 2
-    "hash"            : 5003,  # hash_service.py   — Membre 3
-    "c2pa"            : 5004,  # c2pa_service.py   — Membre 3
-    "watermark_video" : 5005,  # watermark_video   — Membre 3
+    "gateway"         : 5000,  # main.py           — NZALI
+    "score"           : 5001,  # score_service.py  — NZALI
+    "watermark"       : 5002,  # watermark_*.py    — NGOUDA
+    "hash"            : 5003,  # hash_service.py   — YOPA
+    "c2pa"            : 5004,  # c2pa_service.py   — YOPA
+    "watermark_video" : 5005,  # watermark_video   — YOPA
 }
 
 
