@@ -19,7 +19,7 @@ body {
     align-items: center;
     padding: 1rem 2rem;
     background: white;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    box-shadow: 0 6px 10px rgba(0,0,0,0.05);
     position: relative;
 }
 
@@ -166,7 +166,7 @@ body {
         align-items: center;
         padding: 1.5rem 0;
         gap: 1.5rem;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        box-shadow: 0 10px 20px rgba(121, 56, 226, 0.1);
         transform: translateY(-150%);
         transition: transform 0.4s ease-in-out;
         z-index: 999;
