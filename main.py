@@ -35,7 +35,8 @@ UPLOAD_FOLDER = "uploads"
 ALLOWED_EXTENSIONS = {
     "image": ["jpg", "jpeg", "png", "webp"],
     "audio": ["mp3", "wav"],
-    "video": ["mp4", "avi"]
+    "video": ["mp4", "avi"],
+    "document": ["pdf", "docx", "xlsx", "pptx","txt"]
 }
 
 SERVICES = {
@@ -44,6 +45,8 @@ SERVICES = {
     "hash": "http://localhost:5003",
     "c2pa": "http://localhost:5004",
     "wm_video": "http://localhost:5005",
+    "wm_document": "http://localhost:5006",
+
 }
 
 # ================================================================
@@ -316,6 +319,14 @@ async def analyze(media: UploadFile = File(...)):
             wm_res = call_service(
                 "wm_video",
                 "/watermark-video/detect",
+                filepath,
+                unique_name
+            )
+            
+        elif media_type == "document":
+            wm_res = call_service(
+                "wm_document",
+                "/watermark-document/detect",
                 filepath,
                 unique_name
             )
