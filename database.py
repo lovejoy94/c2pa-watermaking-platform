@@ -124,7 +124,7 @@ def sauvegarder_analyse(
             modified=hash_result.get("modified", False),
 
             has_manifest=c2pa_result.get("has_manifest", False),
-            c2pa_certified=c2pa_result.get("certified", False),
+            c2pa_certified=c2pa_result.get("c2pa_certified", False),
             ai_generated=c2pa_result.get("ai_generated", False),
 
             watermark_found=watermark_result.get("watermark_found", False),

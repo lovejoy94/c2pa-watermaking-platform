@@ -57,7 +57,7 @@ C2PA = {
     "success"      : True,
     "fichier"      : "photo.jpg",
     "has_manifest" : False,  # manifeste C2PA présent ?
-    "certified"    : False,  # manifeste certifié ?
+    "c2pa_certified"    : False,  # manifeste certifié ?
     "tool_used"    : None,   # "Adobe" / "Midjourney" / None
     "ai_generated" : False,  # généré par IA ?
     "modifications": [],     # liste des modifications
