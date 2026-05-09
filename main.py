@@ -360,6 +360,8 @@ async def analyze(media: UploadFile = File(...)):
             "has_manifest": c2pa_res.get("has_manifest", False),
             "c2pa_certified": c2pa_res.get("c2pa_certified", False),
             "ai_generated": c2pa_res.get("ai_generated", False),
+            
+            "tool_used": c2pa_res.get("tool_used", "Inconnu"),
 
             "watermark_found": wm_res.get("watermark_found", False),
             "wm_confidence": wm_res.get("confidence", 0),
