@@ -12,11 +12,11 @@ import json
 # CONFIGURATION MYSQL (WAMP)
 # ================================================================
 
-DB_USER     = "root"
-DB_PASSWORD = ""  # ⚠️ vide en local seulement (WAMP)
-DB_HOST     = "localhost"
-DB_PORT     = "3306"
-DB_NAME     = "c2paPlatform"  # ✔ TON NOM DE BASE
+DB_USER = "root"
+DB_PASSWORD = ""  # vide en local avec WAMP
+DB_HOST = "localhost"
+DB_PORT = "3306"
+DB_NAME = "c2paPlatform"
 
 DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
@@ -40,33 +40,38 @@ SessionLocal = sessionmaker(
 )
 
 # ================================================================
-# TABLE
+# TABLE : verifications
 # ================================================================
 
 class Verification(Base):
-
     __tablename__ = "verifications"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
 
-    fichier    = Column(String(255), nullable=False)
+    # Informations fichier
+    fichier = Column(String(255), nullable=False)
     type_media = Column(String(50), nullable=True)
 
-    sha256   = Column(String(64), nullable=True)
+    # Résultat hash
+    sha256 = Column(String(64), nullable=True)
     modified = Column(Boolean, default=False)
 
+    # Résultat C2PA
     has_manifest = Column(Boolean, default=False)
-    certified    = Column(Boolean, default=False)
+    c2pa_certified = Column(Boolean, default=False)
     ai_generated = Column(Boolean, default=False)
 
+    # Résultat watermark
     watermark_found = Column(Boolean, default=False)
-    wm_confidence   = Column(Integer, default=0)
+    wm_confidence = Column(Integer, default=0)
 
-    score   = Column(Integer, nullable=False)
-    label   = Column(String(20), nullable=False)
-    color   = Column(String(10), nullable=False)
+    # Score final
+    score = Column(Integer, nullable=False)
+    label = Column(String(20), nullable=False)
+    color = Column(String(10), nullable=False)
     details = Column(Text, nullable=True)
 
+    # Date analyse
     date_analyse = Column(DateTime, default=datetime.utcnow)
 
     def __repr__(self):
@@ -97,7 +102,7 @@ def test_connexion():
         return False
 
 # ================================================================
-# SAUVEGARDE
+# SAUVEGARDE D'UNE ANALYSE
 # ================================================================
 
 def sauvegarder_analyse(
@@ -109,6 +114,7 @@ def sauvegarder_analyse(
     score_result
 ):
     db = SessionLocal()
+
     try:
         verification = Verification(
             fichier=fichier,
@@ -118,7 +124,7 @@ def sauvegarder_analyse(
             modified=hash_result.get("modified", False),
 
             has_manifest=c2pa_result.get("has_manifest", False),
-            certified=c2pa_result.get("certified", False),
+            c2pa_certified=c2pa_result.get("certified", False),
             ai_generated=c2pa_result.get("ai_generated", False),
 
             watermark_found=watermark_result.get("watermark_found", False),
@@ -127,8 +133,10 @@ def sauvegarder_analyse(
             score=score_result.get("score", 0),
             label=score_result.get("label", "Faible"),
             color=score_result.get("color", "red"),
-
-            details=json.dumps(score_result.get("details", []), ensure_ascii=False),
+            details=json.dumps(
+                score_result.get("details", []),
+                ensure_ascii=False
+            ),
 
             date_analyse=datetime.utcnow()
         )
@@ -154,26 +162,40 @@ def sauvegarder_analyse(
 
 def get_historique(limite=50):
     db = SessionLocal()
+
     try:
-        analyses = db.query(Verification)\
-            .order_by(Verification.date_analyse.desc())\
-            .limit(limite)\
+        analyses = (
+            db.query(Verification)
+            .order_by(Verification.date_analyse.desc())
+            .limit(limite)
             .all()
+        )
 
         return [
             {
                 "id": a.id,
                 "fichier": a.fichier,
                 "type_media": a.type_media,
+
                 "sha256": a.sha256,
+                "modified": a.modified,
+
                 "has_manifest": a.has_manifest,
-                "certified": a.certified,
+                "c2pa_certified": a.c2pa_certified,
+                "ai_generated": a.ai_generated,
+
                 "watermark_found": a.watermark_found,
+                "wm_confidence": a.wm_confidence,
+
                 "score": a.score,
                 "label": a.label,
                 "color": a.color,
                 "details": json.loads(a.details) if a.details else [],
-                "date_analyse": a.date_analyse.strftime("%Y-%m-%d %H:%M:%S")
+
+                "date_analyse": (
+                    a.date_analyse.strftime("%Y-%m-%d %H:%M:%S")
+                    if a.date_analyse else None
+                )
             }
             for a in analyses
         ]
@@ -190,7 +212,6 @@ def get_historique(limite=50):
 # ================================================================
 
 if __name__ == "__main__":
-
     print("=" * 40)
     print(" TEST DATABASE")
     print("=" * 40)
