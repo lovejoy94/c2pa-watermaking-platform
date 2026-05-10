@@ -38,7 +38,6 @@ ALLOWED_EXTENSIONS = {
     "video": ["mp4", "avi"],
     "document": ["pdf", "docx", "xlsx", "pptx","txt"]
 }
-
 SERVICES = {
     "score": "http://localhost:5001",
     "watermark": "http://localhost:5002",
@@ -46,8 +45,9 @@ SERVICES = {
     "c2pa": "http://localhost:5004",
     "wm_video": "http://localhost:5005",
     "wm_document": "http://localhost:5006",
-
 }
+
+
 
 # ================================================================
 # OUTILS
