@@ -1,6 +1,6 @@
 # ================================================================
 # FICHIER  : services/watermark_video.py
-# ROLE     : Microservice détection watermark vidéo
+# ROLE     : Microservice détection watermark vidéo  ajout ou detecte une signature invisible dans une video
 # PORT     : 5005
 # LANCER   : python -m uvicorn services.watermark_video:app --port 5005 --reload
 # ================================================================
