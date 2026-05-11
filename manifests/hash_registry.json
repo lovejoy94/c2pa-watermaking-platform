@@ -13,5 +13,10 @@
     "filename": "test.txt",
     "size": 22,
     "date": "2026-05-10T04:50:46.971695"
+  },
+  "49a344f1e34f1e3c039ce64c29bbb090c137d5651fbba137fbde3a1bec5e009f": {
+    "filename": "messi.jpg",
+    "size": 359452,
+    "date": "2026-05-10T05:46:23.857241"
   }
 }
