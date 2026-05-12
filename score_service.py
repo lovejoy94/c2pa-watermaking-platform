@@ -1,132 +1,213 @@
 # ================================================================
 # FICHIER  : services/score_service.py
-# ROLE     : Microservice de calcul du score de confiance
+# ROLE     : Microservice score de confiance global
 # PORT     : 5001
 # LANCER   : python -m uvicorn services.score_service:app --port 5001 --reload
 # ================================================================
 
 from fastapi import FastAPI
-from pydantic import BaseModel, Field
-from typing import Optional, List
+from pydantic import BaseModel
+from typing import Optional, Dict, Any, List
 
 app = FastAPI(
     title="Score Service",
-    description="Calcule le score de confiance d'un média",
-    version="1.0.0"
+    description="Calcule un score global d'authenticité média",
+    version="2.0.0"
 )
 
+
 # ================================================================
-# MODELES REÇUS DEPUIS main.py
+# MODELE REQUETE
 # ================================================================
-
-class HashResult(BaseModel):
-    success: bool = False
-    sha256: str = ""
-    modified: bool = False
-    error: Optional[str] = None
-
-
-class C2PAResult(BaseModel):
-    success: bool = False
-    has_manifest: bool = False
-    c2pa_certified: bool = False      
-    ai_generated: bool = False
-    modifications: List[str] = Field(default_factory=list)
-    error: Optional[str] = None
-
-
-class WatermarkResult(BaseModel):
-    success: bool = False
-    watermark_found: bool = False
-    confidence: int = 0
-    error: Optional[str] = None
-
 
 class ScoreRequest(BaseModel):
     fichier: str
-    hash: HashResult
-    c2pa: C2PAResult
-    watermark: WatermarkResult
+    hash: Dict[str, Any]
+    c2pa: Dict[str, Any]
+    watermark: Dict[str, Any]
+    signature: Optional[Dict[str, Any]] = None
 
 
 # ================================================================
-# LOGIQUE DU SCORE
-# ================================================================
-
-def calculer_score(hash_res: HashResult, c2pa_res: C2PAResult, wm_res: WatermarkResult):
-    score = 0
-    details = []
-
-    # HASH : 40 points
-    if hash_res.error:
-        details.append("Hash indisponible (0 pt)")
-    elif not hash_res.modified:
-        score += 40
-        details.append("Hash valide : fichier non modifié (+40 pts)")
-    else:
-        details.append("Hash invalide : fichier modifié (0 pt)")
-
-    # C2PA : 35 points
-    if c2pa_res.error:
-        details.append("C2PA indisponible (0 pt)")
-    elif c2pa_res.has_manifest and c2pa_res.c2pa_certified:   # ✅ corrigé
-        score += 35
-        details.append("Manifeste C2PA certifié (+35 pts)")
-    elif c2pa_res.has_manifest:
-        score += 20
-        details.append("Manifeste C2PA présent mais non certifié (+20 pts)")
-    else:
-        details.append("Aucun manifeste C2PA détecté (0 pt)")
-
-    # WATERMARK : 25 points
-    if wm_res.error:
-        details.append("Watermark indisponible (0 pt)")
-    elif wm_res.watermark_found:
-        score += 25
-        details.append("Watermark détecté (+25 pts)")
-    else:
-        details.append("Aucun watermark détecté (0 pt)")
-
-    score = max(0, min(100, score))
-
-    if score >= 70:
-        label = "Fiable"
-        color = "green"
-    elif score >= 40:
-        label = "Douteux"
-        color = "orange"
-    else:
-        label = "Faible"
-        color = "red"
-
-    return {
-        "score": score,
-        "label": label,
-        "color": color,
-        "details": details
-    }
-
-# ================================================================
-# ROUTES
+# CALCUL SCORE
 # ================================================================
 
 @app.post("/score")
-async def score_endpoint(data: ScoreRequest):
-    result = calculer_score(data.hash, data.c2pa, data.watermark)
+async def calculate_score(data: ScoreRequest):
+
+    score = 0
+    details: List[str] = []
+    risks: List[str] = []
+
+    hash_res = data.hash or {}
+    c2pa_res = data.c2pa or {}
+    wm_res = data.watermark or {}
+    sig_res = data.signature or {}
+
+    # ============================================================
+    # 1. HASH / INTEGRITE
+    # ============================================================
+
+    if hash_res.get("success"):
+        score += 10
+        details.append("Hash SHA-256 calculé avec succès")
+
+    if hash_res.get("already_known"):
+        score += 5
+        details.append("Fichier déjà connu dans le registre")
+
+    if hash_res.get("modified"):
+        score -= 30
+        risks.append("Le média semble avoir été modifié")
+
+    # ============================================================
+    # 2. C2PA / PROVENANCE
+    # ============================================================
+
+    if c2pa_res.get("has_manifest"):
+        score += 20
+        details.append("Manifeste C2PA détecté")
+
+    if c2pa_res.get("c2pa_certified"):
+        score += 25
+        details.append("Manifeste C2PA certifié")
+
+    if c2pa_res.get("certificate_trusted"):
+        score += 10
+        details.append("Certificat C2PA fiable")
+
+    if c2pa_res.get("validation_status") in [
+        "invalid",
+        "security_error",
+        "tool_error"
+    ]:
+        score -= 35
+        risks.append("Validation C2PA problématique")
+
+    # ============================================================
+    # 3. ORIGINE IA / EDITION
+    # ============================================================
+
+    content_origin = c2pa_res.get("content_origin", "unknown")
+
+    if content_origin == "ai_generated_certified":
+        score += 10
+        details.append("Contenu IA généré mais certifié")
+
+    elif content_origin == "edited_certified":
+        score += 5
+        details.append("Contenu édité mais certifié")
+
+    elif content_origin == "ai_generated_not_certified":
+        score -= 10
+        risks.append("Contenu IA détecté sans certification forte")
+
+    elif content_origin == "edited_not_certified":
+        score -= 10
+        risks.append("Contenu édité sans certification forte")
+
+    elif content_origin == "unknown":
+        risks.append("Origine du contenu inconnue")
+
+    # ============================================================
+    # 4. WATERMARK
+    # ============================================================
+
+    if wm_res.get("watermark_found"):
+        confidence = wm_res.get("confidence", 0)
+
+        if confidence >= 80:
+            score += 20
+            details.append("Watermark détecté avec forte confiance")
+
+        elif confidence >= 40:
+            score += 10
+            details.append("Watermark détecté avec confiance moyenne")
+
+        else:
+            score += 5
+            details.append("Watermark détecté avec faible confiance")
+
+    else:
+        risks.append("Aucun watermark détecté")
+
+    # ============================================================
+    # 5. SIGNATURE RSA GROUPE 7
+    # ============================================================
+
+    if sig_res.get("success") and sig_res.get("signature"):
+        score += 15
+        details.append("Média signé par la plateforme Groupe 7")
+
+    if sig_res.get("signature_valid"):
+        score += 20
+        details.append("Signature RSA vérifiée avec succès")
+
+    if sig_res.get("success") is False:
+        risks.append("Signature RSA absente ou non vérifiée")
+
+    # ============================================================
+    # NORMALISATION
+    # ============================================================
+
+    score = max(0, min(score, 100))
+
+    if score >= 85:
+        label = "Très fiable"
+        color = "green"
+        decision = "AUTHENTIQUE / CERTIFIÉ"
+
+    elif score >= 65:
+        label = "Fiable"
+        color = "blue"
+        decision = "PROBABLEMENT AUTHENTIQUE"
+
+    elif score >= 40:
+        label = "Moyen"
+        color = "orange"
+        decision = "À VÉRIFIER"
+
+    else:
+        label = "Faible"
+        color = "red"
+        decision = "NON FIABLE / SUSPECT"
+
     return {
         "success": True,
         "fichier": data.fichier,
-        "score":   result["score"],
-        "label":   result["label"],
-        "color":   result["color"],
-        "details": result["details"]
+        "score": score,
+        "label": label,
+        "color": color,
+        "decision": decision,
+        "details": details,
+        "risks": risks
     }
 
+
+# ================================================================
+# HEALTH
+# ================================================================
 
 @app.get("/health")
 async def health():
     return {
         "service": "score_service",
-        "status":  "ok",
-        "port":    5001
+        "status": "ok",
+        "port": 5001,
+        "version": "2.0.0"
     }
+
+
+# ================================================================
+# RUN
+# ================================================================
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        "services.score_service:app",
+        host="0.0.0.0",
+        port=5001,
+        reload=True
+    )
