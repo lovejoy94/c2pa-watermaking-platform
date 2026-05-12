@@ -448,6 +448,8 @@ def fallback_scan(filepath: str) -> dict:
 
                             if msg not in result["modifications"]:
                                 result["modifications"].append(msg)
+                overlap = window[-max_marker_len:]
+                total_read += len(chunk)
 
     except Exception as e:
         result["details"].append(f"Erreur scan local : {e}")
