@@ -1,6 +1,7 @@
+#voila c2pa_service.py
 # ================================================================
-# FICHIER  : services/c2pa_service.py
-# ROLE     : Microservice analyse C2PA et preuve d'authenticité
+# FICHIER  : services/c2pa_service.py cherche la preuve d'authenticite
+# ROLE     : Microservice analyse C2PA et preuve
 # PORT     : 5004
 # LANCER   : python -m uvicorn services.c2pa_service:app --port 5004 --reload
 # ================================================================
