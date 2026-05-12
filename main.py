@@ -1,8 +1,10 @@
 # ================================================================
 # FICHIER  : main.py
 # ROLE     : Gateway principal — Contrôleur MVC + Microservices
+# LANCER   : python -m uvicorn main:app --port 5000 --reload
 # ================================================================
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, File, UploadFile, HTTPException, Request
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -12,32 +14,32 @@ import requests
 import shutil
 import os
 import uuid
+from fastapi.responses import FileResponse
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from datetime import datetime
 
-from database import sauvegarder_analyse, get_historique, create_tables, test_connexion
+from database import (
+    sauvegarder_analyse,
+    get_historique,
+    create_tables,
+    test_connexion
+)
 
 # ================================================================
 # CONFIGURATION
 # ================================================================
-
-app = FastAPI(
-    title="C2PA Watermarking Platform",
-    version="1.0.0"
-)
-
-# Dossier des fichiers CSS et JS
-app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
-
-# Dossier des pages HTML
-templates = Jinja2Templates(directory="frontend/templates")
 
 UPLOAD_FOLDER = "uploads"
 
 ALLOWED_EXTENSIONS = {
     "image": ["jpg", "jpeg", "png", "webp"],
     "audio": ["mp3", "wav"],
-    "video": ["mp4", "avi"],
-    "document": ["pdf", "docx", "xlsx", "pptx","txt"]
+    "video": ["mp4", "avi", "mov", "mkv", "webm"],
+    "document": ["pdf", "docx", "xlsx", "pptx", "txt"]
 }
+
 SERVICES = {
     "score": "http://localhost:5001",
     "watermark": "http://localhost:5002",
@@ -47,24 +49,67 @@ SERVICES = {
     "wm_document": "http://localhost:5006",
 }
 
+# ================================================================
+# LIFESPAN MODERNE
+# ================================================================
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs("outputs", exist_ok=True)
+    os.makedirs("manifests", exist_ok=True)
+    os.makedirs("frontend/templates", exist_ok=True)
+    os.makedirs("frontend/static", exist_ok=True)
+    os.makedirs("reports", exist_ok=True)
+
+    if test_connexion():
+        create_tables()
+        print("MySQL OK")
+    else:
+        print("WAMP non lancé ou MySQL indisponible")
+
+    yield
+
+
+# ================================================================
+# CRÉATION DOSSIERS AVANT APP
+# ================================================================
+
+os.makedirs("frontend/static", exist_ok=True)
+os.makedirs("frontend/templates", exist_ok=True)
+os.makedirs("uploads", exist_ok=True)
+os.makedirs("outputs", exist_ok=True)
+os.makedirs("reports", exist_ok=True)
+os.makedirs("manifests", exist_ok=True)
+
+# ================================================================
+# APP
+# ================================================================
+
+app = FastAPI(
+    title="C2PA Watermarking Platform",
+    version="1.1.0",
+    lifespan=lifespan
+)
+
+app.mount(
+    "/static",
+    StaticFiles(directory="frontend/static"),
+    name="static"
+)
+
+templates = Jinja2Templates(directory="frontend/templates")
 
 # ================================================================
 # OUTILS
 # ================================================================
 
 def get_extension(filename: str) -> str:
-    """
-    Récupère l'extension du fichier.
-    Exemple : image.JPG -> jpg
-    """
     return filename.rsplit(".", 1)[-1].lower()
 
 
 def detect_media_type(filename: str) -> str:
-    """
-    Détecte le type du média : image, audio, video ou unknown.
-    """
     ext = get_extension(filename)
 
     for media_type, extensions in ALLOWED_EXTENSIONS.items():
@@ -75,9 +120,6 @@ def detect_media_type(filename: str) -> str:
 
 
 def is_allowed(filename: str) -> bool:
-    """
-    Vérifie si le fichier possède une extension acceptée.
-    """
     return "." in filename and detect_media_type(filename) != "unknown"
 
 
@@ -86,11 +128,6 @@ def is_allowed(filename: str) -> bool:
 # ================================================================
 
 def call_service(service_name: str, route: str, filepath: str, filename: str) -> dict:
-    """
-    Appelle un microservice en HTTP REST.
-    Le fichier est envoyé avec le champ 'media'.
-    """
-
     try:
         url = SERVICES[service_name] + route
 
@@ -98,7 +135,7 @@ def call_service(service_name: str, route: str, filepath: str, filename: str) ->
             response = requests.post(
                 url,
                 files={"media": (filename, file)},
-                timeout=30
+                timeout=45
             )
 
         if response.status_code == 200:
@@ -106,7 +143,8 @@ def call_service(service_name: str, route: str, filepath: str, filename: str) ->
 
         return {
             "success": False,
-            "error": f"Erreur {service_name} : HTTP {response.status_code}"
+            "error": f"Erreur {service_name} : HTTP {response.status_code}",
+            "details": response.text
         }
 
     except requests.exceptions.ConnectionError:
@@ -127,13 +165,34 @@ def call_service(service_name: str, route: str, filepath: str, filename: str) ->
             "error": str(e)
         }
 
+def call_sign_service(filepath: str, filename: str) -> dict:
+    try:
+        url = SERVICES["hash"] + "/sign"
 
-def call_score_service(filename: str, hash_res: dict, c2pa_res: dict, wm_res: dict) -> dict:
-    """
-    Appelle le score service.
-    Ici on envoie du JSON, pas un fichier.
-    """
+        with open(filepath, "rb") as file:
+            response = requests.post(
+                url,
+                files={"media": (filename, file)},
+                timeout=45
+            )
 
+        if response.status_code == 200:
+            return response.json()
+
+        return {
+            "success": False,
+            "signature_valid": False,
+            "error": f"Erreur signature : HTTP {response.status_code}"
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "signature_valid": False,
+            "error": str(e)
+        }
+        
+def call_score_service(filename: str, hash_res: dict, c2pa_res: dict, wm_res: dict, signature_res: dict) -> dict:
     try:
         url = SERVICES["score"] + "/score"
 
@@ -143,7 +202,8 @@ def call_score_service(filename: str, hash_res: dict, c2pa_res: dict, wm_res: di
                 "fichier": filename,
                 "hash": hash_res,
                 "c2pa": c2pa_res,
-                "watermark": wm_res
+                "watermark": wm_res,
+                "signature": signature_res
             },
             timeout=10
         )
@@ -167,30 +227,63 @@ def call_score_service(filename: str, hash_res: dict, c2pa_res: dict, wm_res: di
             "color": "red",
             "details": [str(e)]
         }
+        
+def generate_pdf_report(analyse_id, filename, media_type, hash_res, c2pa_res, wm_res, score_res, signature_res):
+    report_path = f"reports/rapport_{analyse_id}.pdf"
 
+    doc = SimpleDocTemplate(report_path, pagesize=A4)
+    styles = getSampleStyleSheet()
+    elements = []
 
-# ================================================================
-# STARTUP
-# ================================================================
+    elements.append(Paragraph("Rapport d'analyse d'authenticité média", styles["Title"]))
+    elements.append(Spacer(1, 12))
 
-@app.on_event("startup")
-async def startup():
-    """
-    S'exécute au démarrage du serveur principal.
-    Vérifie MySQL et crée les tables si nécessaire.
-    """
+    elements.append(Paragraph(f"<b>Date :</b> {datetime.now().isoformat()}", styles["Normal"]))
+    elements.append(Paragraph(f"<b>Fichier :</b> {filename}", styles["Normal"]))
+    elements.append(Paragraph(f"<b>Type média :</b> {media_type}", styles["Normal"]))
+    elements.append(Spacer(1, 12))
 
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    os.makedirs("outputs", exist_ok=True)
-    os.makedirs("manifests", exist_ok=True)
-    os.makedirs("frontend/templates", exist_ok=True)
-    os.makedirs("frontend/static", exist_ok=True)
+    elements.append(Paragraph("<b>1. Résultat Hash SHA-256</b>", styles["Heading2"]))
+    elements.append(Paragraph(f"SHA-256 : {hash_res.get('sha256', 'N/A')}", styles["Normal"]))
+    elements.append(Paragraph(f"Fichier connu : {hash_res.get('already_known', False)}", styles["Normal"]))
+    elements.append(Paragraph(f"Modifié : {hash_res.get('modified', False)}", styles["Normal"]))
+    elements.append(Spacer(1, 12))
 
-    if test_connexion():
-        create_tables()
-        print("MySQL OK")
-    else:
-        print("WAMP non lancé ou MySQL indisponible")
+    elements.append(Paragraph("<b>2. Résultat C2PA</b>", styles["Heading2"]))
+    elements.append(Paragraph(f"Manifeste détecté : {c2pa_res.get('has_manifest', False)}", styles["Normal"]))
+    elements.append(Paragraph(f"C2PA certifié : {c2pa_res.get('c2pa_certified', False)}", styles["Normal"]))
+    elements.append(Paragraph(f"Certificat fiable : {c2pa_res.get('certificate_trusted', None)}", styles["Normal"]))
+    elements.append(Paragraph(f"Origine du contenu : {c2pa_res.get('content_origin', 'unknown')}", styles["Normal"]))
+    elements.append(Paragraph(f"Outil utilisé : {c2pa_res.get('tool_used', 'Inconnu')}", styles["Normal"]))
+    elements.append(Spacer(1, 12))
+
+    elements.append(Paragraph("<b>3. Résultat Watermark</b>", styles["Heading2"]))
+    elements.append(Paragraph(f"Watermark détecté : {wm_res.get('watermark_found', False)}", styles["Normal"]))
+    elements.append(Paragraph(f"Confiance watermark : {wm_res.get('confidence', 0)} %", styles["Normal"]))
+    elements.append(Spacer(1, 12))
+
+    elements.append(Paragraph("<b>4. Signature RSA</b>", styles["Heading2"]))
+    elements.append(Paragraph(f"Algorithme : {signature_res.get('signature_algorithm', 'N/A')}", styles["Normal"]))
+    elements.append(Paragraph(f"Signé par : {signature_res.get('signed_by', 'N/A')}", styles["Normal"]))
+    elements.append(Paragraph(f"Date signature : {signature_res.get('signed_at', 'N/A')}", styles["Normal"]))
+    elements.append(Spacer(1, 12))
+
+    elements.append(Paragraph("<b>5. Score global</b>", styles["Heading2"]))
+    elements.append(Paragraph(f"Score : {score_res.get('score', 0)} %", styles["Normal"]))
+    elements.append(Paragraph(f"Niveau : {score_res.get('label', 'Faible')}", styles["Normal"]))
+    elements.append(Spacer(1, 12))
+
+    elements.append(Paragraph("<b>Conclusion</b>", styles["Heading2"]))
+    elements.append(Paragraph(
+        "Ce rapport combine l'empreinte SHA-256, la vérification C2PA, "
+        "la détection de watermark et le score global afin d'évaluer "
+        "l'authenticité du média analysé.",
+        styles["Normal"]
+    ))
+
+    doc.build(elements)
+
+    return report_path
 
 
 # ================================================================
@@ -199,9 +292,6 @@ async def startup():
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    """
-    Page d'accueil.
-    """
     return templates.TemplateResponse(
         "index.html",
         {"request": request}
@@ -210,10 +300,6 @@ async def index(request: Request):
 
 @app.get("/history", response_class=HTMLResponse)
 async def history_page(request: Request):
-    """
-    Page HTML historique.
-    Les données sont chargées par history.js via /api/history.
-    """
     return templates.TemplateResponse(
         "history.html",
         {"request": request}
@@ -222,7 +308,6 @@ async def history_page(request: Request):
 
 @app.get("/result", response_class=HTMLResponse)
 async def result_page(request: Request):
-   
     return templates.TemplateResponse(
         "result.html",
         {"request": request}
@@ -232,10 +317,23 @@ async def result_page(request: Request):
 # ================================================================
 # ROUTES API
 # ================================================================
+@app.get("/report/{analyse_id}")
+async def download_report(analyse_id: int):
+    report_path = f"reports/rapport_{analyse_id}.pdf"
 
+    if not os.path.exists(report_path):
+        raise HTTPException(
+            status_code=404,
+            detail="Rapport PDF introuvable"
+        )
+
+    return FileResponse(
+        report_path,
+        media_type="application/pdf",
+        filename=f"rapport_analyse_{analyse_id}.pdf"
+    )
 @app.get("/api/history")
 async def history_api(limit: int = 50):
-
     try:
         data = get_historique(limit)
 
@@ -254,43 +352,55 @@ async def history_api(limit: int = 50):
 
 @app.post("/analyze")
 async def analyze(media: UploadFile = File(...)):
-    """
-    Route principale :
-    1. reçoit le média,
-    2. appelle les microservices,
-    3. calcule le score,
-    4. sauvegarde en base,
-    5. retourne les données attendues par result.js.
-    """
 
     if not media.filename:
-        raise HTTPException(status_code=400, detail="Aucun fichier envoyé")
+        raise HTTPException(
+            status_code=400,
+            detail="Aucun fichier envoyé"
+        )
 
     if not is_allowed(media.filename):
-        raise HTTPException(status_code=415, detail="Format non supporté")
+        raise HTTPException(
+            status_code=415,
+            detail="Format non supporté"
+        )
 
     media_type = detect_media_type(media.filename)
 
-    # Nom unique pour éviter qu'un fichier écrase un autre
     unique_name = f"{uuid.uuid4()}_{media.filename}"
 
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    filepath = os.path.join(UPLOAD_FOLDER, unique_name)
 
-    # Sauvegarde temporaire du fichier
+    filepath = os.path.join(
+        UPLOAD_FOLDER,
+        unique_name
+    )
+
     with open(filepath, "wb") as file:
         shutil.copyfileobj(media.file, file)
 
     try:
-        # 1. Hash service
+        # ========================================================
+        # 1. HASH SERVICE
+        # ========================================================
+
         hash_res = call_service(
             "hash",
             "/hash",
             filepath,
             unique_name
         )
+        
+        signature_res = call_sign_service(
+            filepath,
+            unique_name
+        )
+        
+    
+        # ========================================================
+        # 2. C2PA SERVICE
+        # ========================================================
 
-        # 2. C2PA service
         c2pa_res = call_service(
             "c2pa",
             "/c2pa",
@@ -298,7 +408,10 @@ async def analyze(media: UploadFile = File(...)):
             unique_name
         )
 
-        # 3. Watermark service selon le type
+        # ========================================================
+        # 3. WATERMARK SERVICE
+        # ========================================================
+
         if media_type == "image":
             wm_res = call_service(
                 "watermark",
@@ -322,7 +435,7 @@ async def analyze(media: UploadFile = File(...)):
                 filepath,
                 unique_name
             )
-            
+
         elif media_type == "document":
             wm_res = call_service(
                 "wm_document",
@@ -339,15 +452,22 @@ async def analyze(media: UploadFile = File(...)):
                 "error": "Type média inconnu"
             }
 
-        # 4. Score service
+        # ========================================================
+        # 4. SCORE SERVICE
+        # ========================================================
+
         score_res = call_score_service(
             unique_name,
             hash_res,
             c2pa_res,
-            wm_res
+            wm_res,
+            signature_res
         )
 
-        # 5. Sauvegarde MySQL
+        # ========================================================
+        # 5. SAUVEGARDE MYSQL
+        # ========================================================
+
         analyse_id = sauvegarder_analyse(
             fichier=unique_name,
             type_media=media_type,
@@ -356,35 +476,86 @@ async def analyze(media: UploadFile = File(...)):
             watermark_result=wm_res,
             score_result=score_res
         )
+        
+        report_path = generate_pdf_report(
+            analyse_id,
+            unique_name,
+            media_type,
+            hash_res,
+            c2pa_res,
+            wm_res,
+            score_res,
+            signature_res
+        )
 
-        # reponse
-        return JSONResponse({
+        # ========================================================
+        # 6. RÉPONSE UNIFIÉE
+        # ========================================================
+
+        return JSONResponse(
+            {
             "success": True,
             "id": analyse_id,
+            "report_url": f"/report/{analyse_id}",
 
             "fichier": unique_name,
             "type_media": media_type,
+            
+            # SIGNATURE RSA
+            "signature_algorithm": signature_res.get("signature_algorithm", None),
+            "signature": signature_res.get("signature", None),
+            "signed_by": signature_res.get("signed_by", None),
+            "signed_at": signature_res.get("signed_at", None),
+            "signature_error": signature_res.get("error", None),
 
+            # HASH
             "sha256": hash_res.get("sha256", ""),
+            "already_known": hash_res.get("already_known", False),
             "modified": hash_res.get("modified", False),
 
+            # C2PA
             "has_manifest": c2pa_res.get("has_manifest", False),
             "c2pa_certified": c2pa_res.get("c2pa_certified", False),
-            "ai_generated": c2pa_res.get("ai_generated", False),
-            
-            "tool_used": c2pa_res.get("tool_used", "Inconnu"),
+            "certificate_trusted": c2pa_res.get("certificate_trusted", None),
+            "validation_status": c2pa_res.get("validation_status", "unknown"),
 
+            # ORIGINE / IA / ÉDITION
+            "ai_generated": c2pa_res.get("ai_generated", False),
+            "edited": c2pa_res.get("edited", False),
+            "certified": c2pa_res.get(
+                "certified",
+                c2pa_res.get("c2pa_certified", False)
+            ),
+            
+            "content_origin": c2pa_res.get("content_origin", "unknown"),
+            "tool_used": c2pa_res.get("tool_used", "Inconnu"),
+            "modifications": c2pa_res.get("modifications", []),
+
+            # WATERMARK
             "watermark_found": wm_res.get("watermark_found", False),
             "wm_confidence": wm_res.get("confidence", 0),
+            "watermark_metadata": wm_res.get("watermark_metadata", None),
 
+            # SCORE
             "score": score_res.get("score", 0),
             "label": score_res.get("label", "Faible"),
             "color": score_res.get("color", "red"),
-            "details": score_res.get("details", [])
+            "decision": score_res.get("decision", "À VÉRIFIER"),
+            "risks": score_res.get("risks", []),
+            "details": score_res.get("details", []),
+
+            # RAPPORT COMPLET
+            "raw": {
+                "hash": hash_res,
+                "c2pa": c2pa_res,
+                "watermark": wm_res,
+                "signature": signature_res,
+                "score": score_res
+            }
+             
         })
 
     finally:
-        # Suppression du fichier temporaire
         try:
             if os.path.exists(filepath):
                 os.remove(filepath)
@@ -398,14 +569,13 @@ async def analyze(media: UploadFile = File(...)):
 
 @app.get("/health")
 async def health():
-    """
-    Vérifie que le gateway fonctionne.
-    """
     return {
         "status": "ok",
         "service": "gateway",
         "architecture": "microservices",
-        "port": 5000
+        "port": 5000,
+        "services": SERVICES
+       
     }
 
 
