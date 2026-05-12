@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>C2PA Watermarking</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+        <!-- JS -->
+   <script src="script.js"></script>
+
+</head>
+
+<body>
+
+    <!-- ====================================================== -->
+    <!-- NAVBAR -->
+    <!-- ====================================================== -->
+
+    <nav>
+
+        <span class="logo">
+            <img src="logo.png" alt="logo"> C2PA <span>Platform</span>
+            
+        </span>
+
+        <a href="history.html">
+            📜 Historique
+        </a>
+
+    </nav>
+
+    <!-- ====================================================== -->
+    <!-- MAIN -->
+    <!-- ====================================================== -->
+
+    <main>
+
+        <section class="hero">
+
+            <div class="badge">
+                ✦ Vérification &amp; Authenticité des médias
+            </div>
+
+            <h1>
+                Analysez, Certifiez,<br>
+                <span>Faites Confiance.</span>
+            </h1>
+
+            <p class="subtitle">
+                Déposez un fichier pour vérifier son authenticité,
+                détecter un watermark et obtenir un score de confiance C2PA.
+            </p>
+
+            <!-- ================================================== -->
+            <!-- ZONE UPLOAD -->
+            <!-- ================================================== -->
+
+            <div class="upload-zone" id="uploadZone">
+
+                <div class="upload-icon">
+                    📁
+                </div>
+
+                <h3>Glissez votre fichier ici</h3>
+
+                <p>
+                    ou cliquez pour parcourir — image, vidéo, audio
+                </p>
+
+                <input type="file"
+                       id="fileInput"
+                       name="media"
+                       accept="image/*,video/*,audio/*">
+
+                <div id="fileInfo"></div>
+
+            </div>
+
+            <!-- ================================================== -->
+            <!-- BOUTONS -->
+            <!-- ================================================== -->
+
+            <div class="btn-row">
+
+                <button class="btn btn-secondary"
+                        id="importBtn">
+
+                    📁 Choisir un fichier
+
+                </button>
+
+                <button class="btn btn-primary"
+                        id="analyzeBtn">
+
+                    🔍 Analyser
+
+                </button>
+
+            </div>
+
+            <!-- ================================================== -->
+            <!-- LOADER -->
+            <!-- ================================================== -->
+
+            <div id="loader">
+
+                <div class="spinner"></div>
+
+                <p>Analyse en cours... ⏳</p>
+
+            </div>
+
+            <!-- ================================================== -->
+            <!-- RESULTAT -->
+            <!-- ================================================== -->
+
+            <div id="resultBox"></div>
+
+        </section>
+
+    </main>
+
+    <!-- ====================================================== -->
+    <!-- FOOTER -->
+    <!-- ====================================================== -->
+
+    <footer>
+
+        &copy; 2026 C2PA Watermarking Platform — Groupe 7
+
+    </footer>
+
+    
+
+</body>
+
+</html>
