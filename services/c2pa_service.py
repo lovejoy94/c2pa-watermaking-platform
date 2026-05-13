@@ -1,7 +1,6 @@
-#voila c2pa_service.py
 # ================================================================
-# FICHIER  : services/c2pa_service.py cherche la preuve d'authenticite
-# ROLE     : Microservice analyse C2PA et preuve
+# FICHIER  : services/c2pa_service.py
+# ROLE     : Microservice analyse C2PA et preuve d'authenticité
 # PORT     : 5004
 # LANCER   : python -m uvicorn services.c2pa_service:app --port 5004 --reload
 # ================================================================
@@ -448,6 +447,8 @@ def fallback_scan(filepath: str) -> dict:
 
                             if msg not in result["modifications"]:
                                 result["modifications"].append(msg)
+                overlap = window[-max_marker_len:]
+                total_read += len(chunk)
 
     except Exception as e:
         result["details"].append(f"Erreur scan local : {e}")
