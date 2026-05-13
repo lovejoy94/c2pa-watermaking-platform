@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>w2pa watermarking</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="logo">
+                <img src="logo.png" alt="Logo MediaTrust" height="40">
+                <span>MediaTrust</span>
+             </div>
+            <button class="hamburger" id="hamburger" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="#">Accueil</a></li>
+                <li><a href="history.html">Historique</a></li>
+                <li><a href="#">À propos</a></li>
+                <li><a href="#">Profil</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section class="hero">
+
+            <h1>Bienvenue sur votre espace</h1>
+            <p>Vérifier,authentifier,faites Confiance</p>
+            <input type="file" id="fileInput" accept="image/*,video/*,audio/*" style="display: none;">
+             <button class="cta" id="importBtn"> Importer un fichier</button>
+             <div id="fileInfo" style="margin-top: 1rem; font-size: 0.9rem; color: #2c5282;"></div>
+            <p> </p>
+            <!-- Bouton Analyser (caché par défaut) -->
+<button class="cta" id="analyzeBtn" style="display: none; background: #2c5282; margin-left: 1rem;">🔍 Analyser</button>
+           <!-- Loader (caché par défaut) -->
+<div id="loader" style="display: none; margin-top: 2rem;">
+    <div class="spinner"></div>
+    <p style="margin-top: 1rem; color: #1e3a5f;">Analyse en cours... ⏳</p>
+</div>
+<button class="cta">ANALYSER</button>
+        </section>
+
+      
+            
+            
+        
+        <!-- Autres contenus -->
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>
