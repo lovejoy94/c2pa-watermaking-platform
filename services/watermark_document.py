@@ -120,13 +120,9 @@ def watermark_any_file(input_path: str, output_path: str) -> str:
                 shutil.copy2(input_path, output_path)
 
         else:
-
             shutil.copy2(input_path, output_path)
-
     except Exception:
-
         shutil.copy2(input_path, output_path)
-
     # ============================================================
     # MANIFEST JSON
     # ============================================================

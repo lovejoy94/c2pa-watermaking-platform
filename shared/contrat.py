@@ -4,7 +4,7 @@
 #           Chaque membre DOIT retourner exactement ces champs
 #           NE PAS changer les noms des champs
 # ================================================================
-
+from typing import Dict, Any
 
 # ----------------------------------------------------------------
 # NGOUDA — watermark_image.py
@@ -61,7 +61,7 @@ C2PA = {
     "tool_used"    : None,   # "Adobe" / "Midjourney" / None
     "ai_generated" : False,  # généré par IA ?
     "modifications": [],     # liste des modifications
-    "details"      : "",
+    "details"      : [],
     "error"        : None
 }
 
@@ -81,6 +81,19 @@ WATERMARK_VIDEO = {
     "error"                 : None
 }
 
+# ----------------------------------------------------------------
+# NGOUDA — watermark_document.py
+# Route : POST http://localhost:5006/watermark-document/detect
+# ----------------------------------------------------------------
+WATERMARK_DOCUMENT = {
+    "success"         : True,
+    "fichier"         : "document.pdf",
+    "watermark_found" : False,
+    "confidence"      : 0,
+    "details"         : [],
+    "error"           : None
+}
+
 
 # ================================================================
 # PORTS OFFICIELS — NE JAMAIS CHANGER
@@ -88,10 +101,12 @@ WATERMARK_VIDEO = {
 PORTS = {
     "gateway"         : 5000,  # main.py           — NZALI
     "score"           : 5001,  # score_service.py  — NZALI
-    "watermark"       : 5002,  # watermark_*.py    — NGOUDA
+    "watermark_image" : 5002,  # watermark_*.py    — NGOUDA
+    "watermark_audio" : 5002,  # watermark_*.py    — NGOUDA
     "hash"            : 5003,  # hash_service.py   — YOPA
     "c2pa"            : 5004,  # c2pa_service.py   — YOPA
     "watermark_video" : 5005,  # watermark_video   — YOPA
+    "watermark_document"   : 5006,  # watermark_*.py    — NGOUDA
 }
 
 
@@ -104,6 +119,7 @@ ROUTES = {
     "watermark_image"  : "/watermark-image/detect",
     "watermark_audio"  : "/watermark-audio/detect",
     "watermark_video"  : "/watermark-video/detect",
+    "watermark_document": "/watermark-document/detect",
     "score"            : "/score",
     "health"           : "/health",
 }

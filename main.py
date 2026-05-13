@@ -259,7 +259,7 @@ def generate_pdf_report(analyse_id, filename, media_type, hash_res, c2pa_res, wm
 
     elements.append(Paragraph("<b>3. Résultat Watermark</b>", styles["Heading2"]))
     elements.append(Paragraph(f"Watermark détecté : {wm_res.get('watermark_found', False)}", styles["Normal"]))
-    elements.append(Paragraph(f"Confiance watermark : {wm_res.get('confidence', 0)} %", styles["Normal"]))
+    elements.append(Paragraph(f"Confiance watermark : {wm_res.get('confidence', wm_res.get('wm_confidence', 0))} %", styles["Normal"]))
     elements.append(Spacer(1, 12))
 
     elements.append(Paragraph("<b>4. Signature RSA</b>", styles["Heading2"]))
@@ -533,7 +533,7 @@ async def analyze(media: UploadFile = File(...)):
 
             # WATERMARK
             "watermark_found": wm_res.get("watermark_found", False),
-            "wm_confidence": wm_res.get("confidence", 0),
+            "wm_confidence": wm_res.get("confidence", wm_res.get("wm_confidence", 0)),
             "watermark_metadata": wm_res.get("watermark_metadata", None),
 
             # SCORE
