@@ -8,7 +8,7 @@
 
 :root{
     --navy:#0d1b2a;
-    --accent:#2e86de;
+    --accent: #642ef7;
     --light:#e8f0fe;
     --white:#ffffff;
     --muted:#6b7fa3;
@@ -16,6 +16,7 @@
     --green:#1a9e5c;
     --orange:#e07b00;
     --red:#d63031;
+    --olive:rgb(183, 141, 224);
 }
 
 body{
@@ -30,14 +31,14 @@ nav{
     justify-content:space-between;
     align-items:center;
     padding:1.2rem 3rem;
-    background:#df93ee;
+    background: #f17a7a;;
     border-bottom:1px solid #c665da;
 }
 
 .logo{
-    font-family:'Syne',sans-serif;
     font-weight:800;
-    font-size:1.25rem;
+    font-size:1.3rem;
+    font-weight: bold;
 }
 
 .logo span{
@@ -45,12 +46,14 @@ nav{
 }
 .logo img{
      font-family:'Syne',sans-serif;
-    font-weight:800;
+    font-weight:500;
     font-size:1.25rem;
      color:var(--accent);
        width: 120px;
     height: auto;
      margin: bottom 1px;
+         width: 100px;
+   
 }
 
 

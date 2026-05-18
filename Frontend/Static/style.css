@@ -9,8 +9,8 @@
 :root {
 
     --navy:   #0d1b2a;
-    --accent: #2e86de;
-    --light:  #e8f0fe;
+    --accent: #642ef7;
+    --light:  #eaeff8;
     --white:  #f17a7a;
     --muted:  #1a2944;
     --bg:     #f4f7fb;
@@ -39,6 +39,7 @@ nav {
     background: var(--white);
 
     border-bottom: 1px solid #dce6f7;
+    border-top: #f17a7a;
 }
 
 .logo {
@@ -53,7 +54,7 @@ nav {
     color: var(--accent);
 }
 .logo img{
-     width: 120px;
+     width: 100px;
     height: auto;
      margin: bottom 1px;
 }
