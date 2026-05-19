@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Résultat - MediaTrust</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        .success { color: #2ecc71; }
+        .warning { color: #f39c12; }
+        .danger { color: #e74c3c; }
+        button {
+            background: #1e3a5f;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Résultat d'analyse</h1>
+        <div id="info"></div>
+        <div id="score" style="font-size: 2rem; margin: 20px 0;"></div>
+        <div id="details"></div>
+        <button onclick="window.location.href='index.html'">← Retour</button>
+    </div>
+    <script>
+        // Récupère les infos passées dans l'URL
+        const params = new URLSearchParams(window.location.search);
+        const fileName = params.get('name') || 'Fichier inconnu';
+        const fileSize = params.get('size') || '0';
+        const score = params.get('score') || '75';
+        
+        document.getElementById('info').innerHTML = `📄 ${fileName} (${(fileSize/1024).toFixed(1)} Ko)`;
+        
+        let scoreClass = '';
+        let message = '';
+        if (score >= 80) { scoreClass = 'success'; message = '✅ Authentique'; }
+        else if (score >= 50) { scoreClass = 'warning'; message = '⚠️ Douteux'; }
+        else { scoreClass = 'danger'; message = '❌ Falsifié'; }
+        
+        document.getElementById('score').innerHTML = `<span class="${scoreClass}">${message}</span><br>Confiance : ${score}%`;
+        document.getElementById('details').innerHTML = `Analyse effectuée le ${new Date().toLocaleString()}`;
+    </script>
+</body>
+</html>

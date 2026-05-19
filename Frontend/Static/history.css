@@ -1,0 +1,161 @@
+*,
+*::before,
+*::after{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+:root{
+    --navy:#0d1b2a;
+    --accent: #642ef7;
+    --light:#e8f0fe;
+    --white:#ffffff;
+    --muted:#6b7fa3;
+    --bg:#f4f7fb;
+    --green:#1a9e5c;
+    --orange:#e07b00;
+    --red:#d63031;
+    --olive:rgb(183, 141, 224);
+}
+
+body{
+    font-family:'DM Sans',sans-serif;
+    background:var(--bg);
+    color:var(--navy);
+    min-height:100vh;
+}
+
+nav{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:1.2rem 3rem;
+    background: #f17a7a;;
+    border-bottom:1px solid #c665da;
+}
+
+.logo{
+    font-weight:800;
+    font-size:1.3rem;
+    font-weight: bold;
+}
+
+.logo span{
+    color:var(--accent);
+}
+.logo img{
+     font-family:'Syne',sans-serif;
+    font-weight:500;
+    font-size:1.25rem;
+     color:var(--accent);
+       width: 120px;
+    height: auto;
+     margin: bottom 1px;
+         width: 100px;
+   
+}
+
+
+nav a{
+    text-decoration:none;
+    color:var(--muted);
+}
+
+main{
+    max-width:1000px;
+    margin:3rem auto;
+    padding:0 1.5rem;
+}
+
+.page-header{
+    margin-bottom:2rem;
+}
+
+.page-header h1{
+    font-family:'Syne',sans-serif;
+    font-size:2rem;
+    margin-bottom:0.5rem;
+}
+
+.page-header p{
+    color:var(--muted);
+}
+
+.history-container{
+    display:grid;
+    gap:1rem;
+}
+
+.history-card{
+    background:var(--white);
+    border:1px solid #f17a7a;;
+    border-radius:18px;
+    padding:1.5rem;
+}
+
+.history-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:1rem;
+}
+
+.file-name{
+    font-family:'Syne',sans-serif;
+    font-size:1.1rem;
+    font-weight:700;
+}
+
+.score{
+    font-weight:700;
+    font-size:1rem;
+}
+
+.score.green{
+    color:var(--green);
+}
+
+.score.orange{
+    color:var(--orange);
+}
+
+.score.red{
+    color:var(--red);
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:1rem;
+}
+
+.item{
+    background:var(--bg);
+    border-radius:10px;
+    padding:0.8rem 1rem;
+}
+
+.item-label{
+    font-size:0.75rem;
+    color:var(--muted);
+    margin-bottom:0.3rem;
+    text-transform:uppercase;
+}
+
+.item-value{
+    font-weight:600;
+}
+
+.loading,
+.empty{
+    text-align:center;
+    padding:3rem;
+    color:var(--muted);
+}
+
+footer{
+    text-align:center;
+    padding:2rem;
+    color:var(--muted);
+}

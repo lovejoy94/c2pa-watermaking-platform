@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Historique</title>
+</head>
+<body>
+    <h1>Historique des analyses</h1>
+    {% for a in analyses %}
+        <p>{{ a.fichier }} — {{ a.score }}/100 — {{ a.label }}</p>
+    {% endfor %}
+</body>
+</html>

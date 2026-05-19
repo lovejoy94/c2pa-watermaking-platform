@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>C2PA Platform</title>
+</head>
+<body>
+
+    <h1>C2PA Watermarking Platform</h1>
+
+    <!--
+        IMPORTANT :
+        name="media" → obligatoire
+        enctype="multipart/form-data" → obligatoire pour fichiers
+    -->
+    <form action="/analyze"
+          method="post"
+          enctype="multipart/form-data">
+
+        <input type="file" name="media"
+               accept="image/*,audio/*,video/*">
+
+        <button type="submit">Analyser</button>
+
+    </form>
+
+</body>
+</html>
