@@ -1,143 +1,66 @@
-const uploadZone = document.getElementById("uploadZone");
+// =========================
+// script.js
+// =========================
 
-const fileInput = document.getElementById("fileInput");
+// MENU HAMBURGER
 
-const importBtn = document.getElementById("importBtn");
+const hamburger = document.getElementById("hamburger");
+const navMenu = document.getElementById("nav-menu");
 
-const analyzeBtn = document.getElementById("analyzeBtn");
-
-const fileInfo = document.getElementById("fileInfo");
-
-const loader = document.getElementById("loader");
-
-const resultBox = document.getElementById("resultBox");
-
-analyzeBtn.style.display = "none";
-
-loader.style.display = "none";
-
-/* ======================================================= */
-/* CHOIX FICHIER */
-/* ======================================================= */
-
-importBtn.addEventListener("click", () => {
-
-    fileInput.click();
-});
-
-uploadZone.addEventListener("click", () => {
-
-    fileInput.click();
-});
-
-fileInput.addEventListener("change", () => {
-
-    afficherFichier();
-});
-
-/* ======================================================= */
-/* DRAG & DROP */
-/* ======================================================= */
-
-uploadZone.addEventListener("dragover", (event) => {
-
-    event.preventDefault();
-
-    uploadZone.classList.add("dragover");
-});
-
-uploadZone.addEventListener("dragleave", () => {
-
-    uploadZone.classList.remove("dragover");
-});
-
-uploadZone.addEventListener("drop", (event) => {
-
-    event.preventDefault();
-
-    uploadZone.classList.remove("dragover");
-
-    if (event.dataTransfer.files.length > 0) {
-
-        fileInput.files = event.dataTransfer.files;
-
-        afficherFichier();
-    }
-});
-
-/* ======================================================= */
-/* AFFICHAGE FICHIER */
-/* ======================================================= */
-
-function afficherFichier() {
-
-    const file = fileInput.files[0];
-
-    if (file) {
-
-        fileInfo.textContent =
-            `✅ ${file.name} (${(file.size / 1024).toFixed(1)} Ko)`;
-
-        analyzeBtn.style.display = "inline-flex";
-    }
+if(hamburger){
+    hamburger.addEventListener("click", () => {
+        navMenu.classList.toggle("active");
+    });
 }
 
-/* ======================================================= */
-/* ANALYSE */
-/* ======================================================= */
+// IMPORT FICHIER
 
-analyzeBtn.addEventListener("click", async () => {
+const importBtn = document.getElementById("importBtn");
+const fileInput = document.getElementById("fileInput");
+const fileInfo = document.getElementById("fileInfo");
+const analyzeBtn = document.getElementById("analyzeBtn");
+const loader = document.getElementById("loader");
 
-    const file = fileInput.files[0];
+if(importBtn){
 
-    if (!file) {
+    importBtn.addEventListener("click", () => {
+        fileInput.click();
+    });
 
-        alert("Veuillez choisir un fichier.");
+    fileInput.addEventListener("change", () => {
 
-        return;
-    }
+        const file = fileInput.files[0];
 
-    const formData = new FormData();
+        if(file){
 
-    formData.append("media", file);
+            fileInfo.innerHTML = `
+                <p><strong>Fichier :</strong> ${file.name}</p>
+                <p><strong>Taille :</strong> ${(file.size/1024).toFixed(2)} KB</p>
+            `;
 
-    loader.style.display = "flex";
+            analyzeBtn.style.display = "inline-block";
+        }
 
-    resultBox.innerHTML = "";
+    });
 
-    try {
+}
 
-        const response = await fetch("/analyze", {
+// ANALYSE
 
-            method: "POST",
+if(analyzeBtn){
 
-            body: formData
-        });
+    analyzeBtn.addEventListener("click", () => {
 
-        const data = await response.json();
+        loader.style.display = "block";
 
-        loader.style.display = "none";
+        setTimeout(() => {
 
-        resultBox.innerHTML = `
-            <div class="result">
-                <h3>Résultat</h3>
+            loader.style.display = "none";
 
-                <p><strong>Fichier :</strong> ${data.fichier}</p>
+            window.location.href = "results.html";
 
-                <p><strong>Score :</strong> ${data.score.score}/100</p>
+        }, 3000);
 
-                <p><strong>Niveau :</strong> ${data.score.label}</p>
-            </div>
-        `;
+    });
 
-    } catch (error) {
-
-        loader.style.display = "none";
-
-        resultBox.innerHTML = `
-            <div class="result error">
-                ❌ Erreur serveur
-            </div>
-        `;
-    }
-});
+}
